@@ -1,0 +1,32 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <h1 class="title">Customers</h1>
+      <p class="subtitle">Manage customer records and view details.</p>
+    </div>
+
+    <button class="primary-btn" type="button" disabled title="Wiring in next step">
+      + New customer
+    </button>
+  </header>
+
+  <div class="grid">
+    @for (c of customers; track c.id) {
+      <a class="card" [routerLink]="['/customers', c.id]">
+        <div class="card-top">
+          <div class="name">{{ c.name }}</div>
+          <span class="badge" [class.badge-secondary]="c.status === 'Prospect'">{{ c.status }}</span>
+        </div>
+
+        <div class="meta">
+          <div class="meta-label">Email</div>
+          <div class="meta-value">{{ c.email }}</div>
+        </div>
+
+        <div class="card-footer">
+          <span class="link">View details</span>
+        </div>
+      </a>
+    }
+  </div>
+</section>

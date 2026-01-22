@@ -1,0 +1,23 @@
+<aside class="sidebar" aria-label="Primary navigation">
+  <div class="section">
+    <div class="section-title">Workspace</div>
+
+    <a
+      class="nav-item"
+      routerLink="/customers"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <span class="dot" aria-hidden="true"></span>
+      Customers
+    </a>
+  </div>
+
+  <div class="section secondary">
+    <div class="section-title">System</div>
+
+    <div class="hint">
+      Backend URL is configured via <code>NG_APP_API_BASE</code>/<code>NG_APP_BACKEND_URL</code>.
+    </div>
+  </div>
+</aside>
