@@ -24,3 +24,4 @@ export interface CreateCustomerRequest {
 }
 
 export interface UpdateCustomerRequest extends CreateCustomerRequest {}
+

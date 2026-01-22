@@ -1,87 +1,127 @@
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { getApiBaseUrl } from '../core/api.config';
 import type {
   CreateCustomerRequest,
   CustomerDto,
   PagedCustomersResponse,
-  UpdateCustomerRequest
+  UpdateCustomerRequest,
 } from './customer.models';
 
+type ProblemDetails = {
+  title?: string;
+  detail?: string;
+  status?: number;
+  errors?: Record<string, string[]>;
+};
+
+/**
+ * Converts various backend error shapes (ProblemDetails, validation errors, etc.)
+ * into a human-friendly message suitable for inline UI display.
+ */
+function formatApiError(err: unknown): string {
+  if (err instanceof HttpErrorResponse) {
+    const statusLine = err.status ? `${err.status} ${err.statusText}`.trim() : 'Request failed';
+
+    const payload = err.error as any;
+    // Angular may provide string, object, Blob, etc.
+    if (typeof payload === 'string' && payload.trim()) {
+      return `${statusLine}: ${payload}`.trim();
+    }
+
+    const pd = payload as ProblemDetails | undefined;
+    if (pd && (pd.title || pd.detail || pd.errors)) {
+      let msg = `${pd.title ?? 'Error'}${pd.detail ? `: ${pd.detail}` : ''}`.trim();
+
+      if (pd.errors) {
+        const errs = Object.entries(pd.errors)
+          .map(([k, v]) => `${k}: ${(v ?? []).join(', ')}`)
+          .join(' | ');
+        if (errs) msg = `${msg} (${errs})`;
+      }
+
+      return msg;
+    }
+
+    return statusLine;
+  }
+
+  if (err && typeof err === 'object' && 'message' in err) {
+    return String((err as any).message);
+  }
+
+  return 'Unexpected error';
+}
+
 @Injectable({ providedIn: 'root' })
-export class CustomerService {
-  private readonly baseUrl = getApiBaseUrl();
+export class CustomersService {
+  private readonly apiBase = getApiBaseUrl();
+
+  constructor(private readonly http: HttpClient) {}
 
   private url(path: string): string {
-    const prefix = this.baseUrl ? this.baseUrl : '';
-    return `${prefix}${path}`;
+    // path should start with "/api/..."
+    return `${this.apiBase}${path}`;
   }
 
-  private async json<T>(response: Response): Promise<T> {
-    const text = await response.text();
-    if (!text) return undefined as T;
-    return JSON.parse(text) as T;
-  }
+  // PUBLIC_INTERFACE
+  async list(page = 1, pageSize = 20, q?: string): Promise<PagedCustomersResponse> {
+    /** List customers with pagination and optional search. */
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (q?.trim()) params = params.set('q', q.trim());
 
-  private async throwIfNotOk(response: Response): Promise<void> {
-    if (response.ok) return;
-
-    let detail = `${response.status} ${response.statusText}`;
     try {
-      const payload = await this.json<any>(response);
-      if (payload?.title || payload?.detail) {
-        detail = `${payload.title ?? 'Error'}: ${payload.detail ?? ''}`.trim();
-      }
-      if (payload?.errors) {
-        const errs = Object.entries(payload.errors)
-          .map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`)
-          .join(' | ');
-        if (errs) detail = `${detail} (${errs})`;
-      }
-    } catch {
-      // ignore parse failures
+      return await firstValueFrom(
+        this.http.get<PagedCustomersResponse>(this.url('/api/customers'), { params }),
+      );
+    } catch (e) {
+      throw new Error(formatApiError(e));
     }
-    throw new Error(detail);
   }
 
-  async list(page = 1, pageSize = 20, search?: string): Promise<PagedCustomersResponse> {
-    const params = new URLSearchParams();
-    params.set('page', String(page));
-    params.set('pageSize', String(pageSize));
-    if (search?.trim()) params.set('search', search.trim());
-
-    const res = await fetch(this.url(`/api/customers?${params.toString()}`));
-    await this.throwIfNotOk(res);
-    return await this.json<PagedCustomersResponse>(res);
+  // PUBLIC_INTERFACE
+  async getById(id: string): Promise<CustomerDto> {
+    /** Fetch a single customer by id. */
+    try {
+      return await firstValueFrom(
+        this.http.get<CustomerDto>(this.url(`/api/customers/${encodeURIComponent(id)}`)),
+      );
+    } catch (e) {
+      throw new Error(formatApiError(e));
+    }
   }
 
-  async get(id: string): Promise<CustomerDto> {
-    const res = await fetch(this.url(`/api/customers/${encodeURIComponent(id)}`));
-    await this.throwIfNotOk(res);
-    return await this.json<CustomerDto>(res);
-  }
-
+  // PUBLIC_INTERFACE
   async create(request: CreateCustomerRequest): Promise<CustomerDto> {
-    const res = await fetch(this.url(`/api/customers`), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
-    });
-    await this.throwIfNotOk(res);
-    return await this.json<CustomerDto>(res);
+    /** Create a new customer. */
+    try {
+      return await firstValueFrom(this.http.post<CustomerDto>(this.url('/api/customers'), request));
+    } catch (e) {
+      throw new Error(formatApiError(e));
+    }
   }
 
+  // PUBLIC_INTERFACE
   async update(id: string, request: UpdateCustomerRequest): Promise<CustomerDto> {
-    const res = await fetch(this.url(`/api/customers/${encodeURIComponent(id)}`), {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
-    });
-    await this.throwIfNotOk(res);
-    return await this.json<CustomerDto>(res);
+    /** Update an existing customer. */
+    try {
+      return await firstValueFrom(
+        this.http.put<CustomerDto>(this.url(`/api/customers/${encodeURIComponent(id)}`), request),
+      );
+    } catch (e) {
+      throw new Error(formatApiError(e));
+    }
   }
 
+  // PUBLIC_INTERFACE
   async delete(id: string): Promise<void> {
-    const res = await fetch(this.url(`/api/customers/${encodeURIComponent(id)}`), { method: 'DELETE' });
-    await this.throwIfNotOk(res);
+    /** Delete a customer. */
+    try {
+      await firstValueFrom(this.http.delete<void>(this.url(`/api/customers/${encodeURIComponent(id)}`)));
+    } catch (e) {
+      throw new Error(formatApiError(e));
+    }
   }
 }
+

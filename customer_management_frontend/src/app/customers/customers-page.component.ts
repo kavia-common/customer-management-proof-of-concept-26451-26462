@@ -1,12 +1,14 @@
 import { Component, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CustomerService } from './customer.service';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { CustomersService } from './customer.service';
 import type { CustomerDto, PagedCustomersResponse } from './customer.models';
 
 @Component({
   selector: 'app-customers-page',
   standalone: true,
-  imports: [RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="layout">
       <header class="header">
@@ -26,21 +28,37 @@ import type { CustomerDto, PagedCustomersResponse } from './customer.models';
               <input
                 id="search"
                 class="field__input"
-                [value]="search()"
-                (input)="onSearch(($any($event.target)).value)"
+                [(ngModel)]="searchModel"
+                (ngModelChange)="onSearchChange($event)"
                 placeholder="Name or email"
               />
             </div>
           </div>
+
           <div class="toolbar__right">
+            <div class="field" style="min-width: 140px;">
+              <label class="field__label" for="pageSize">Page size</label>
+              <select
+                id="pageSize"
+                class="field__input"
+                [ngModel]="pageSize()"
+                (ngModelChange)="setPageSize($event)"
+              >
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="20">20</option>
+                <option [ngValue]="50">50</option>
+              </select>
+            </div>
+
             <button class="btn" (click)="refresh()" [disabled]="loading()">Refresh</button>
           </div>
         </div>
 
+        <div *ngIf="success()" class="alert alert--success">{{ success() }}</div>
         <div *ngIf="error()" class="alert alert--error">{{ error() }}</div>
 
         <div class="tableWrap" *ngIf="!loading(); else loadingTpl">
-          <table class="table">
+          <table class="table" aria-label="Customers table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -76,7 +94,9 @@ import type { CustomerDto, PagedCustomersResponse } from './customer.models';
 
           <div class="pager">
             <button class="btn" (click)="prev()" [disabled]="loading() || page() <= 1">Prev</button>
-            <div class="pager__meta">Page {{ page() }} of {{ totalPages() }}</div>
+            <div class="pager__meta">
+              Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} total
+            </div>
             <button class="btn" (click)="next()" [disabled]="loading() || page() >= totalPages()">Next</button>
           </div>
         </div>
@@ -86,30 +106,39 @@ import type { CustomerDto, PagedCustomersResponse } from './customer.models';
         </ng-template>
       </section>
     </div>
-  `
+  `,
 })
 export class CustomersPageComponent {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly success = signal<string | null>(null);
 
   protected readonly page = signal(1);
   protected readonly pageSize = signal(20);
-  protected readonly search = signal('');
+
+  // UI model for search input (debounced into `searchEffective`)
+  searchModel = '';
+  protected readonly searchEffective = signal('');
+
+  private searchTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
 
   protected readonly data = signal<PagedCustomersResponse | null>(null);
 
   protected readonly items = computed<CustomerDto[]>(() => this.data()?.items ?? []);
   protected readonly totalPages = computed<number>(() => this.data()?.totalPages ?? 1);
+  protected readonly totalCount = computed<number>(() => this.data()?.totalCount ?? 0);
 
-  constructor(private readonly customers: CustomerService) {
+  constructor(private readonly customers: CustomersService) {
     void this.refresh();
   }
 
   async refresh(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    this.success.set(null);
+
     try {
-      const res = await this.customers.list(this.page(), this.pageSize(), this.search());
+      const res = await this.customers.list(this.page(), this.pageSize(), this.searchEffective());
       this.data.set(res);
     } catch (e: any) {
       this.error.set(e?.message ?? 'Failed to load customers');
@@ -118,8 +147,22 @@ export class CustomersPageComponent {
     }
   }
 
-  onSearch(value: string): void {
-    this.search.set(value);
+  onSearchChange(value: string): void {
+    this.searchModel = value;
+
+    if (this.searchTimer) globalThis.clearTimeout(this.searchTimer);
+
+    // Simple debounce to avoid spamming API
+    this.searchTimer = globalThis.setTimeout(() => {
+      this.searchEffective.set((value ?? '').trim());
+      this.page.set(1);
+      void this.refresh();
+    }, 250);
+  }
+
+  setPageSize(size: number): void {
+    const safe = Number(size) || 20;
+    this.pageSize.set(safe);
     this.page.set(1);
     void this.refresh();
   }
@@ -135,13 +178,23 @@ export class CustomersPageComponent {
   }
 
   async remove(c: CustomerDto): Promise<void> {
-    if (!confirm(`Delete ${c.firstName} ${c.lastName}?`)) return;
+    if (!globalThis.confirm(`Delete ${c.firstName} ${c.lastName}?`)) return;
 
     this.loading.set(true);
     this.error.set(null);
+    this.success.set(null);
+
     try {
       await this.customers.delete(c.id);
+
+      // If we just removed the last item on the page, try backing up one page.
+      const remaining = Math.max(0, this.items().length - 1);
+      if (remaining === 0 && this.page() > 1) {
+        this.page.set(this.page() - 1);
+      }
+
       await this.refresh();
+      this.success.set('Customer deleted.');
     } catch (e: any) {
       this.error.set(e?.message ?? 'Failed to delete customer');
     } finally {
@@ -149,3 +202,4 @@ export class CustomersPageComponent {
     }
   }
 }
+

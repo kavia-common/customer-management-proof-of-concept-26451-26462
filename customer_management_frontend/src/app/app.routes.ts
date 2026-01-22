@@ -7,5 +7,6 @@ export const routes: Routes = [
   { path: 'customers', component: CustomersPageComponent },
   { path: 'customers/new', component: CustomerFormPageComponent },
   { path: 'customers/:id', component: CustomerFormPageComponent },
-  { path: '**', redirectTo: 'customers' }
+  { path: '**', redirectTo: 'customers' },
 ];
+

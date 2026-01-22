@@ -10,7 +10,26 @@ To start a local development server, run:
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+This repo is configured to run the Angular dev server on port **3000**.
+
+Once the server is running, open your browser and navigate to:
+
+- `http://localhost:3000/`
+
+### Backend API base URL
+
+This frontend calls the backend using:
+
+- `NG_APP_API_BASE` (preferred), falling back to `http://localhost:3001` if not set.
+
+Example:
+
+```bash
+export NG_APP_API_BASE=http://localhost:3001
+ng serve
+```
+
+If you are running the backend elsewhere, set `NG_APP_API_BASE` to that origin (no trailing slash).
 
 ## Code scaffolding
 
