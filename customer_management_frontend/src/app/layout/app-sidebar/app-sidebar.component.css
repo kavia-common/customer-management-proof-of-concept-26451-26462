@@ -73,6 +73,27 @@
   border: 1px solid rgba(17, 24, 39, 0.06);
 }
 
+.secondary .hint strong {
+  color: var(--text);
+}
+
+.linklike {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 6px 0 0;
+  background: transparent;
+  color: rgba(37, 99, 235, 1);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  text-align: left;
+}
+
+.linklike:hover {
+  text-decoration: underline;
+}
+
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 11px;

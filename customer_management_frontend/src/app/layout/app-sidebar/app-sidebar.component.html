@@ -18,6 +18,18 @@
 
     <div class="hint">
       Backend URL is configured via <code>NG_APP_API_BASE</code>/<code>NG_APP_BACKEND_URL</code>.
+      <br />
+      Status:
+      @if (status() === 'ok') {
+        <strong>Reachable</strong>
+      } @else if (status() === 'down') {
+        <strong>Unreachable</strong>
+        @if (detail()) { <span>— {{ detail() }}</span> }
+      } @else {
+        <strong>Checking…</strong>
+      }
+      <br />
+      <button type="button" class="linklike" (click)="refreshBackendStatus()">Re-check</button>
     </div>
   </div>
 </aside>
