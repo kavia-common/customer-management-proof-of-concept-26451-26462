@@ -2,9 +2,13 @@
   <header class="page-header">
     <div>
       <a class="back" routerLink="/customers">← Customers</a>
-      <h1 class="title">Customer #{{ id() }}</h1>
-      <p class="subtitle">Detail view (data wiring will be added next).</p>
+      <h1 class="title">{{ customer()?.name ?? ('Customer #' + id()) }}</h1>
+      <p class="subtitle">
+        Detail view
+        @if (errorMessage()) { — {{ errorMessage() }} }
+      </p>
     </div>
+=======
 
     <div class="actions">
       <button class="secondary-btn" type="button" disabled>Edit</button>
@@ -16,18 +20,20 @@
     <div class="row">
       <div class="label">Status</div>
       <div class="value">
-        <span class="badge">Active</span>
+        <span class="badge">{{ customer()?.status ?? 'Active' }}</span>
       </div>
     </div>
 
     <div class="row">
       <div class="label">Email</div>
-      <div class="value muted">To be loaded from API</div>
+      <div class="value" [class.muted]="!customer()?.email">{{ customer()?.email ?? '—' }}</div>
     </div>
 
     <div class="row">
       <div class="label">Notes</div>
-      <div class="value muted">To be loaded from API</div>
+      <div class="value" [class.muted]="!customer()?.notes">
+        {{ customer()?.notes ?? '—' }}
+      </div>
     </div>
   </div>
 </section>

@@ -10,8 +10,12 @@
     </button>
   </header>
 
+  @if (errorMessage()) {
+    <p class="subtitle">Note: {{ errorMessage() }} (showing fallback data if available)</p>
+  }
+
   <div class="grid">
-    @for (c of customers; track c.id) {
+    @for (c of customers(); track c.id) {
       <a class="card" [routerLink]="['/customers', c.id]">
         <div class="card-top">
           <div class="name">{{ c.name }}</div>
