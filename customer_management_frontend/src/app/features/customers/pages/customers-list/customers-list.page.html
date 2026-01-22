@@ -75,6 +75,10 @@
     }
   </div>
 
+  @if (noticeMessage()) {
+    <p class="subtitle">✓ {{ noticeMessage() }}</p>
+  }
+
   @if (errorMessage()) {
     <p class="subtitle">Note: {{ errorMessage() }} (showing fallback data if available)</p>
   }

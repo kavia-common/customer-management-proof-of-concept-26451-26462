@@ -31,6 +31,9 @@ export class CustomersListPage {
   /** If an API error occurs, we keep a user-friendly message stub for later UI. */
   readonly errorMessage = signal<string | null>(null);
 
+  /** Minimal UI notification banner (success/info). */
+  readonly noticeMessage = signal<string | null>(null);
+
   /** Customers displayed in the grid. */
   readonly customers = signal<Customer[]>([
     // Placeholder data for layout verification; replaced by API result when available.
@@ -100,6 +103,7 @@ export class CustomersListPage {
   private refreshFromApi(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.noticeMessage.set(null);
 
     const query: CustomersListQuery = {
       q: this.q().trim() || undefined,
@@ -190,6 +194,7 @@ export class CustomersListPage {
         next: () => {
           this.modalSaving.set(false);
           this.modalOpen.set(false);
+          this.noticeMessage.set('Customer created successfully.');
           this.refreshFromApi();
         },
         error: (err: unknown) => {
@@ -219,6 +224,7 @@ export class CustomersListPage {
       next: () => {
         this.modalSaving.set(false);
         this.modalOpen.set(false);
+        this.noticeMessage.set('Customer updated successfully.');
         this.refreshFromApi();
       },
       error: (err: unknown) => {
@@ -257,7 +263,10 @@ export class CustomersListPage {
     if (!ok) return;
 
     this.customersApi.delete(c.id).subscribe({
-      next: () => this.refreshFromApi(),
+      next: () => {
+        this.noticeMessage.set('Customer deleted.');
+        this.refreshFromApi();
+      },
       error: (err: unknown) => {
         const apiErr = err as ApiError;
         this.errorMessage.set(apiErr?.message ?? 'Unable to delete customer.');

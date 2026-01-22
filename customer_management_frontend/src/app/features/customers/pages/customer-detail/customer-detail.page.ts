@@ -29,6 +29,9 @@ export class CustomerDetailPage {
   readonly loading = signal<boolean>(true);
   readonly errorMessage = signal<string | null>(null);
 
+  /** Minimal UI notification banner (success/info). */
+  readonly noticeMessage = signal<string | null>(null);
+
   readonly customer = signal<Customer | null>(null);
 
   // Modal state
@@ -53,6 +56,7 @@ export class CustomerDetailPage {
 
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.noticeMessage.set(null);
 
     this.customersApi.getById(id).subscribe({
       next: (c) => {
@@ -114,6 +118,7 @@ export class CustomerDetailPage {
       next: () => {
         this.modalSaving.set(false);
         this.modalOpen.set(false);
+        this.noticeMessage.set('Customer updated successfully.');
         this.refresh();
       },
       error: (err: unknown) => {
@@ -133,6 +138,7 @@ export class CustomerDetailPage {
 
     this.customersApi.delete(current.id).subscribe({
       next: () => {
+        this.noticeMessage.set('Customer deleted.');
         void this.router.navigate(['/customers']);
       },
       error: (err: unknown) => {

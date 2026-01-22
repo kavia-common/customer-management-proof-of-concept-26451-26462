@@ -5,6 +5,7 @@
       <h1 class="title">{{ customer()?.name ?? ('Customer #' + id()) }}</h1>
       <p class="subtitle">
         Detail view
+        @if (noticeMessage()) { — ✓ {{ noticeMessage() }} }
         @if (errorMessage()) { — {{ errorMessage() }} }
       </p>
     </div>

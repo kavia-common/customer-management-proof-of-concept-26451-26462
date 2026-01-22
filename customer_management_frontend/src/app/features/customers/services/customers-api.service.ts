@@ -24,15 +24,15 @@ export class CustomersApiService {
    * PUBLIC_INTERFACE
    * List customers with optional search/filter/sort params.
    *
-   * Backend endpoint path is expected to be `/customers` (common REST pattern).
-   * If backend differs, adjust only the path segment (interceptor still handles base URL).
+   * Backend endpoint path is `/api/customers`.
+   * This service intentionally uses relative URLs so the API base URL interceptor can prefix them.
    */
   list(query: CustomersListQuery = {}): Observable<ListResponse<Customer>> {
     const params = this.toHttpParams(query);
 
-    return this.http.get<unknown>('/customers', { params }).pipe(
+    return this.http.get<unknown>('/api/customers', { params }).pipe(
       map((res) => {
-        // Support either { items: [...] } or raw array [...] until backend is finalized.
+        // Support either { items: [...] } or raw array [...].
         if (Array.isArray(res)) {
           return { items: res as Customer[] };
         }
@@ -50,7 +50,7 @@ export class CustomersApiService {
    * Get customer by id.
    */
   getById(id: number): Observable<Customer> {
-    return this.http.get<Customer>(`/customers/${encodeURIComponent(String(id))}`);
+    return this.http.get<Customer>(`/api/customers/${encodeURIComponent(String(id))}`);
   }
 
   /**
@@ -58,7 +58,7 @@ export class CustomersApiService {
    * Create a customer.
    */
   create(payload: CreateCustomerRequest): Observable<Customer> {
-    return this.http.post<Customer>('/customers', payload);
+    return this.http.post<Customer>('/api/customers', payload);
   }
 
   /**
@@ -66,7 +66,10 @@ export class CustomersApiService {
    * Update a customer by id.
    */
   update(id: number, payload: UpdateCustomerRequest): Observable<Customer> {
-    return this.http.put<Customer>(`/customers/${encodeURIComponent(String(id))}`, payload);
+    return this.http.put<Customer>(
+      `/api/customers/${encodeURIComponent(String(id))}`,
+      payload,
+    );
   }
 
   /**
@@ -74,7 +77,7 @@ export class CustomersApiService {
    * Delete a customer by id.
    */
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`/customers/${encodeURIComponent(String(id))}`);
+    return this.http.delete<void>(`/api/customers/${encodeURIComponent(String(id))}`);
   }
 
   private toHttpParams(query: CustomersListQuery): HttpParams {
