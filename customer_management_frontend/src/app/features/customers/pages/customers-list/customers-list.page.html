@@ -5,21 +5,95 @@
       <p class="subtitle">Manage customer records and view details.</p>
     </div>
 
-    <button class="primary-btn" type="button" disabled title="Wiring in next step">
+    <button class="primary-btn" type="button" (click)="openCreateModal()">
       + New customer
     </button>
   </header>
+
+  <div class="filters">
+    <label class="filter">
+      <span class="filter-label">Search</span>
+      <input
+        class="filter-input"
+        type="search"
+        [value]="q()"
+        (input)="onSearchInput($event)"
+        placeholder="Search by name, email, or id"
+      />
+    </label>
+
+    <label class="filter">
+      <span class="filter-label">Status</span>
+      <select
+        class="filter-input"
+        [value]="status()"
+        (change)="onStatusChange($event)"
+      >
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="filter actions">
+      <button class="secondary-btn" type="button" (click)="onApplyFilters()">
+        Apply
+      </button>
+      <button class="ghost-btn" type="button" (click)="onClearFilters()">
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <div class="sort-row">
+    <span class="sort-label">Sort:</span>
+    <button class="sort-btn" type="button" (click)="onToggleSort('name')">
+      Name
+      <span class="sort-dir" [class.active]="sortBy() === 'name'">
+        {{ sortBy() === 'name' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}
+      </span>
+    </button>
+    <button class="sort-btn" type="button" (click)="onToggleSort('email')">
+      Email
+      <span class="sort-dir" [class.active]="sortBy() === 'email'">
+        {{ sortBy() === 'email' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}
+      </span>
+    </button>
+    <button class="sort-btn" type="button" (click)="onToggleSort('status')">
+      Status
+      <span class="sort-dir" [class.active]="sortBy() === 'status'">
+        {{ sortBy() === 'status' ? (sortDir() === 'asc' ? '↑' : '↓') : '↕' }}
+      </span>
+    </button>
+
+    <span class="spacer"></span>
+
+    @if (loading()) {
+      <span class="hint">Loading…</span>
+    } @else {
+      <span class="hint">{{ filteredSortedCustomers().length }} customers</span>
+    }
+  </div>
 
   @if (errorMessage()) {
     <p class="subtitle">Note: {{ errorMessage() }} (showing fallback data if available)</p>
   }
 
   <div class="grid">
-    @for (c of customers(); track c.id) {
+    @for (c of filteredSortedCustomers(); track trackById($index, c)) {
       <a class="card" [routerLink]="['/customers', c.id]">
         <div class="card-top">
           <div class="name">{{ c.name }}</div>
-          <span class="badge" [class.badge-secondary]="c.status === 'Prospect'">{{ c.status }}</span>
+
+          <div class="pill-actions">
+            <span class="badge" [class.badge-secondary]="c.status === 'Prospect'">{{ c.status }}</span>
+            <button class="pill-btn" type="button" (click)="openEditModalForCustomer(c); $event.preventDefault(); $event.stopPropagation()">
+              Edit
+            </button>
+            <button class="pill-btn danger" type="button" (click)="onDeleteFromList(c, $event)">
+              Delete
+            </button>
+          </div>
         </div>
 
         <div class="meta">
@@ -33,4 +107,14 @@
       </a>
     }
   </div>
+
+  <app-customer-form-modal
+    [open]="modalOpen()"
+    [mode]="modalMode()"
+    [customer]="modalCustomer()"
+    [saving]="modalSaving()"
+    [errorMessage]="modalError()"
+    (closed)="closeModal()"
+    (submitted)="onModalSubmitted($event)"
+  />
 </section>

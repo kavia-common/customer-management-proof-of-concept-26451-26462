@@ -1,0 +1,126 @@
+@if (open) {
+  {{ syncFromInputs() }}
+  <div
+    class="backdrop"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="title()"
+    (mousedown)="onBackdropMouseDown($event)"
+  >
+    <div class="modal" role="document">
+      <header class="modal-header">
+        <div>
+          <h2 class="modal-title">{{ title() }}</h2>
+          <p class="modal-subtitle">Fields marked * are required.</p>
+        </div>
+
+        <button class="icon-btn" type="button" (click)="onClose()" [disabled]="saving" aria-label="Close">
+          ✕
+        </button>
+      </header>
+
+      <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+        @if (errorMessage) {
+          <div class="banner-error" role="alert">
+            {{ errorMessage }}
+          </div>
+        }
+
+        <div class="grid">
+          <label class="field">
+            <span class="label">First name *</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="firstName"
+              placeholder="e.g., Ava"
+              [class.invalid]="form.controls.firstName.touched && form.controls.firstName.invalid"
+              autocomplete="given-name"
+            />
+            @if (form.controls.firstName.touched && form.controls.firstName.invalid) {
+              <span class="error">
+                First name is required.
+              </span>
+            }
+          </label>
+
+          <label class="field">
+            <span class="label">Last name *</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="lastName"
+              placeholder="e.g., Carter"
+              [class.invalid]="form.controls.lastName.touched && form.controls.lastName.invalid"
+              autocomplete="family-name"
+            />
+            @if (form.controls.lastName.touched && form.controls.lastName.invalid) {
+              <span class="error">
+                Last name is required.
+              </span>
+            }
+          </label>
+
+          <label class="field col-2">
+            <span class="label">Email *</span>
+            <input
+              class="input"
+              type="email"
+              formControlName="email"
+              placeholder="name@company.com"
+              [class.invalid]="form.controls.email.touched && form.controls.email.invalid"
+              autocomplete="email"
+            />
+            @if (form.controls.email.touched && form.controls.email.invalid) {
+              <span class="error">
+                @if (form.controls.email.errors?.['required']) { Email is required. }
+                @else { Enter a valid email address. }
+              </span>
+            }
+          </label>
+
+          <label class="field">
+            <span class="label">Phone</span>
+            <input
+              class="input"
+              type="tel"
+              formControlName="phone"
+              placeholder="e.g., +1 555 0100"
+              [class.invalid]="form.controls.phone.touched && form.controls.phone.invalid"
+              autocomplete="tel"
+            />
+            @if (form.controls.phone.touched && form.controls.phone.invalid) {
+              <span class="error">Enter a valid phone number.</span>
+            }
+          </label>
+
+          <label class="field">
+            <span class="label">Status</span>
+            <select class="input" formControlName="status">
+              @for (s of statuses; track s) {
+                <option [value]="s">{{ s }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="field col-2">
+            <span class="label">Notes</span>
+            <textarea
+              class="input textarea"
+              formControlName="notes"
+              placeholder="Optional notes..."
+              rows="4"
+            ></textarea>
+          </label>
+        </div>
+
+        <footer class="modal-footer">
+          <button class="secondary-btn" type="button" (click)="onClose()" [disabled]="saving">Cancel</button>
+          <button class="primary-btn" type="submit" [disabled]="saving || form.invalid">
+            @if (saving) { Saving… } @else { Save }
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}

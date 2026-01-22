@@ -23,7 +23,6 @@ export const apiErrorInterceptor: HttpInterceptorFn = (
 
       // Centralized logging stub (replace with app-wide logger/toast later).
       // Keep this for now to make backend integration troubleshooting easier.
-      // eslint-disable-next-line no-console
       console.error('[API ERROR]', {
         url: req.url,
         method: req.method,
